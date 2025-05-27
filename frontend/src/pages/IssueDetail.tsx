@@ -1,11 +1,11 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
-import { Plus, Bug, CheckSquare, Clock, AlertCircle, User } from "lucide-react";
+import { Bug, CheckSquare, Clock, AlertCircle, User } from "lucide-react";
 import Layout from "@/components/layout/Layout";
+import SubIssueForm from "@/components/forms/SubIssueForm";
 
 interface Issue {
   _id: string;
@@ -39,16 +39,40 @@ const IssueDetail = () => {
   const { issueId } = useParams();
   const navigate = useNavigate();
 
+  // First, get the issue to find the sprintId
   const { data: issue, isLoading: issueLoading } = useQuery({
     queryKey: ['issue', issueId],
     queryFn: async () => {
       const token = localStorage.getItem('token');
-      // Note: The API endpoint structure suggests we need sprintId, but we'll try to fetch directly
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/issue/sprint/task/${issueId}`, {
+      // We need to find the issue by searching through sprints
+      // For now, let's try a direct approach - this might need adjustment based on actual API
+      const sprintsResponse = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/sprint`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!response.ok) throw new Error('Failed to fetch issue');
-      return response.json();
+      
+      if (!sprintsResponse.ok) throw new Error('Failed to fetch sprints');
+      const sprints = await sprintsResponse.json();
+      
+      // Search through sprints to find the issue
+      for (const sprint of sprints) {
+        try {
+          const issuesResponse = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/issue/${sprint._id}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          
+          if (issuesResponse.ok) {
+            const issues = await issuesResponse.json();
+            const foundIssue = issues.find((issue: Issue) => issue._id === issueId);
+            if (foundIssue) {
+              return foundIssue;
+            }
+          }
+        } catch (error) {
+          // Continue searching
+        }
+      }
+      
+      throw new Error('Issue not found');
     },
   });
 
@@ -167,10 +191,7 @@ const IssueDetail = () => {
         <div className="mb-8">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-semibold text-gray-900">Sub-Issues</h2>
-            <Button className="bg-blue-600 hover:bg-blue-700">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Sub-Issue
-            </Button>
+            {issueId && <SubIssueForm issueId={issueId} />}
           </div>
           
           {subIssuesLoading ? (
@@ -224,10 +245,7 @@ const IssueDetail = () => {
                 <CheckSquare className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">No sub-issues yet</h3>
                 <p className="text-gray-600 mb-4">Break down this issue into smaller tasks</p>
-                <Button className="bg-blue-600 hover:bg-blue-700">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Sub-Issue
-                </Button>
+                {issueId && <SubIssueForm issueId={issueId} />}
               </CardContent>
             </Card>
           )}

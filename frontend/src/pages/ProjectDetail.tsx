@@ -1,11 +1,11 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
-import { Plus, Calendar, Users } from "lucide-react";
+import { Calendar, Users } from "lucide-react";
 import Layout from "@/components/layout/Layout";
+import SprintForm from "@/components/forms/SprintForm";
 
 interface Sprint {
   _id: string;
@@ -102,10 +102,7 @@ const ProjectDetail = () => {
             </div>
             <p className="text-gray-600 capitalize">{project?.type} Project</p>
           </div>
-          <Button className="bg-blue-600 hover:bg-blue-700">
-            <Plus className="h-4 w-4 mr-2" />
-            New Sprint
-          </Button>
+          {projectId && <SprintForm projectId={projectId} />}
         </div>
 
         {/* Sprints Section */}
@@ -161,10 +158,7 @@ const ProjectDetail = () => {
                 <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">No sprints yet</h3>
                 <p className="text-gray-600 mb-4">Create your first sprint to start organizing work</p>
-                <Button className="bg-blue-600 hover:bg-blue-700">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create Sprint
-                </Button>
+                {projectId && <SprintForm projectId={projectId} />}
               </CardContent>
             </Card>
           )}

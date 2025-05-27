@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, FolderOpen, Users } from "lucide-react";
+import { FolderOpen, Users } from "lucide-react";
 import Layout from "@/components/layout/Layout";
+import ProjectForm from "@/components/forms/ProjectForm";
 
 interface Project {
   _id: string;
@@ -61,12 +61,7 @@ const Dashboard = () => {
             <h2 className="text-3xl font-bold text-gray-900">Projects</h2>
             <p className="text-gray-600 mt-2">Manage your project portfolio</p>
           </div>
-          {user.role === 'manager' && (
-            <Button className="bg-blue-600 hover:bg-blue-700">
-              <Plus className="h-4 w-4 mr-2" />
-              New Project
-            </Button>
-          )}
+          {user.role === 'manager' && <ProjectForm />}
         </div>
 
         {isLoading ? (
@@ -123,12 +118,7 @@ const Dashboard = () => {
               <FolderOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">No projects yet</h3>
               <p className="text-gray-600 mb-4">Get started by creating your first project</p>
-              {user.role === 'manager' && (
-                <Button className="bg-blue-600 hover:bg-blue-700">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create Project
-                </Button>
-              )}
+              {user.role === 'manager' && <ProjectForm />}
             </CardContent>
           </Card>
         )}
