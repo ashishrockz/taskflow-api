@@ -1,11 +1,17 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
-import { Bug, CheckSquare, Clock, AlertCircle, User } from "lucide-react";
+import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
+import { Bug, CheckSquare, Clock, AlertCircle, User, Edit, Trash2 } from "lucide-react";
 import Layout from "@/components/layout/Layout";
 import SubIssueForm from "@/components/forms/SubIssueForm";
+import IssueForm from "@/components/forms/IssueForm";
+import { useToast } from "@/hooks/use-toast";
 
 interface Issue {
   _id: string;
@@ -35,9 +41,73 @@ interface SubIssue {
   sprintId: string;
 }
 
+const ITEMS_PER_PAGE = 5;
+
 const IssueDetail = () => {
   const { issueId } = useParams();
   const navigate = useNavigate();
+  const [currentPage, setCurrentPage] = useState(1);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Delete issue mutation
+  const deleteIssueMutation = useMutation({
+    mutationFn: async () => {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/issue/${issueId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!response.ok) throw new Error('Failed to delete issue');
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Issue deleted",
+        description: "The issue has been successfully deleted.",
+      });
+      // Navigate back to sprint detail page
+      if (issue?.sprintId) {
+        navigate(`/sprints/${issue.sprintId}`);
+      } else {
+        navigate('/dashboard');
+      }
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Delete sub-issue mutation
+  const deleteSubIssueMutation = useMutation({
+    mutationFn: async (subIssueId: string) => {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/subissue/${subIssueId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!response.ok) throw new Error('Failed to delete sub-issue');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['subissues', issueId] });
+      toast({
+        title: "Sub-issue deleted",
+        description: "The sub-issue has been successfully deleted.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
 
   // First, get the issue to find the sprintId
   const { data: issue, isLoading: issueLoading } = useQuery({
@@ -45,8 +115,7 @@ const IssueDetail = () => {
     queryFn: async () => {
       const token = localStorage.getItem('token');
       // We need to find the issue by searching through sprints
-      // For now, let's try a direct approach - this might need adjustment based on actual API
-      const sprintsResponse = await fetch(`http://localhost:8080/api/sprint`, {
+      const sprintsResponse = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/sprint`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       
@@ -56,7 +125,7 @@ const IssueDetail = () => {
       // Search through sprints to find the issue
       for (const sprint of sprints) {
         try {
-          const issuesResponse = await fetch(`http://localhost:8080/api/issue/${sprint._id}`, {
+          const issuesResponse = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/issue/${sprint._id}`, {
             headers: { Authorization: `Bearer ${token}` },
           });
           
@@ -76,11 +145,11 @@ const IssueDetail = () => {
     },
   });
 
-  const { data: subIssues, isLoading: subIssuesLoading } = useQuery({
+  const { data: allSubIssues, isLoading: subIssuesLoading } = useQuery({
     queryKey: ['subissues', issueId],
     queryFn: async () => {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:8080/api/subissue/issue/${issueId}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/subissue/issue/${issueId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!response.ok) throw new Error('Failed to fetch sub-issues');
@@ -88,6 +157,12 @@ const IssueDetail = () => {
     },
     enabled: !!issueId,
   });
+
+  // Pagination logic for sub-issues
+  const totalPages = Math.ceil((allSubIssues?.length || 0) / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const subIssues = allSubIssues?.slice(startIndex, endIndex) || [];
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -169,6 +244,43 @@ const IssueDetail = () => {
               <p className="text-gray-600 text-lg">{issue?.Summary}</p>
             </div>
             <div className="flex items-center space-x-2">
+              <IssueForm 
+                issue={issue}
+                sprintId={issue?.sprintId!}
+                projectId={issue?.projectId!}
+                trigger={
+                  <Button variant="outline" size="sm">
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit Issue
+                  </Button>
+                }
+              />
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50">
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete Issue</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to delete this issue? This action cannot be undone and will also delete all sub-issues.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => deleteIssueMutation.mutate()}
+                      className="bg-red-600 hover:bg-red-700"
+                      disabled={deleteIssueMutation.isPending}
+                    >
+                      {deleteIssueMutation.isPending ? "Deleting..." : "Delete Issue"}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
               {issue && getStatusIcon(issue.status)}
               <Badge variant="secondary">
                 {issue?.status}
@@ -190,7 +302,9 @@ const IssueDetail = () => {
         {/* Sub-Issues Section */}
         <div className="mb-8">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-semibold text-gray-900">Sub-Issues</h2>
+            <h2 className="text-2xl font-semibold text-gray-900">
+              Sub-Issues ({allSubIssues?.length || 0})
+            </h2>
             {issueId && <SubIssueForm issueId={issueId} />}
           </div>
           
@@ -206,39 +320,126 @@ const IssueDetail = () => {
               ))}
             </div>
           ) : subIssues?.length > 0 ? (
-            <div className="space-y-4">
-              {subIssues.map((subIssue: SubIssue) => (
-                <Card key={subIssue._id} className="hover:shadow-md transition-shadow duration-200">
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-2 mb-2">
-                          {getTypeIcon(subIssue.subissueType)}
-                          <span className="text-sm text-gray-500">{subIssue.customId}</span>
-                          <Badge className={`text-xs ${getPriorityColor(subIssue.priority)}`}>
-                            {subIssue.priority}
+            <>
+              <div className="space-y-4">
+                {subIssues.map((subIssue: SubIssue) => (
+                  <Card key={subIssue._id} className="hover:shadow-md transition-shadow duration-200">
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-2 mb-2">
+                            {getTypeIcon(subIssue.subissueType)}
+                            <span className="text-sm text-gray-500">{subIssue.customId}</span>
+                            <Badge className={`text-xs ${getPriorityColor(subIssue.priority)}`}>
+                              {subIssue.priority}
+                            </Badge>
+                          </div>
+                          <h3 className="text-lg font-medium text-gray-900 mb-1">
+                            {subIssue.title}
+                          </h3>
+                          <p className="text-gray-600 text-sm mb-2">{subIssue.summary}</p>
+                          <div className="flex items-center space-x-4 text-sm text-gray-500">
+                            <span>Assigned to: {subIssue.assignedTo}</span>
+                            <span>Type: {subIssue.subissueType}</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <SubIssueForm 
+                            subIssue={subIssue}
+                            issueId={issueId!}
+                            trigger={
+                              <Button variant="ghost" size="sm">
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                            }
+                          />
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50">
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete Sub-Issue</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to delete this sub-issue? This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => deleteSubIssueMutation.mutate(subIssue._id)}
+                                  className="bg-red-600 hover:bg-red-700"
+                                  disabled={deleteSubIssueMutation.isPending}
+                                >
+                                  {deleteSubIssueMutation.isPending ? "Deleting..." : "Delete"}
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                          {getStatusIcon(subIssue.status)}
+                          <Badge variant="secondary" className="text-xs">
+                            {subIssue.status}
                           </Badge>
                         </div>
-                        <h3 className="text-lg font-medium text-gray-900 mb-1">
-                          {subIssue.title}
-                        </h3>
-                        <p className="text-gray-600 text-sm mb-2">{subIssue.summary}</p>
-                        <div className="flex items-center space-x-4 text-sm text-gray-500">
-                          <span>Assigned to: {subIssue.assignedTo}</span>
-                          <span>Type: {subIssue.subissueType}</span>
-                        </div>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        {getStatusIcon(subIssue.status)}
-                        <Badge variant="secondary" className="text-xs">
-                          {subIssue.status}
-                        </Badge>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="mt-8 flex justify-center">
+                  <Pagination>
+                    <PaginationContent>
+                      <PaginationItem>
+                        <PaginationPrevious 
+                          onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                          className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                        />
+                      </PaginationItem>
+                      
+                      {[...Array(totalPages)].map((_, i) => {
+                        const page = i + 1;
+                        if (
+                          page === 1 ||
+                          page === totalPages ||
+                          (page >= currentPage - 1 && page <= currentPage + 1)
+                        ) {
+                          return (
+                            <PaginationItem key={page}>
+                              <PaginationLink
+                                onClick={() => setCurrentPage(page)}
+                                isActive={currentPage === page}
+                                className="cursor-pointer"
+                              >
+                                {page}
+                              </PaginationLink>
+                            </PaginationItem>
+                          );
+                        } else if (page === currentPage - 2 || page === currentPage + 2) {
+                          return (
+                            <PaginationItem key={page}>
+                              <PaginationEllipsis />
+                            </PaginationItem>
+                          );
+                        }
+                        return null;
+                      })}
+                      
+                      <PaginationItem>
+                        <PaginationNext 
+                          onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                          className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                        />
+                      </PaginationItem>
+                    </PaginationContent>
+                  </Pagination>
+                </div>
+              )}
+            </>
           ) : (
             <Card className="text-center py-12">
               <CardContent>

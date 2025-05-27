@@ -86,10 +86,15 @@ const Navbar = () => {
           <div className="flex items-center space-x-4">
             {user && (
               <div className="hidden sm:flex items-center space-x-2">
-                <div className="flex items-center space-x-2 text-sm">
-                  <User className="h-4 w-4 text-gray-500" />
-                  <span className="text-gray-700">{user.fullName}</span>
-                </div>
+                <Button
+                  variant={isActive('/profile') ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => navigate('/profile')}
+                  className="flex items-center space-x-2"
+                >
+                  <User className="h-4 w-4" />
+                  <span className="hidden lg:inline">{user.fullName}</span>
+                </Button>
                 <Badge variant="secondary" className="text-xs">
                   {user.role}
                 </Badge>

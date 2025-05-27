@@ -2,10 +2,12 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
-import { Calendar, Users } from "lucide-react";
+import { Calendar, Users, Edit, Trash2 } from "lucide-react";
 import Layout from "@/components/layout/Layout";
 import SprintForm from "@/components/forms/SprintForm";
+import ProjectForm from "@/components/forms/ProjectForm";
 
 interface Sprint {
   _id: string;
@@ -30,7 +32,7 @@ const ProjectDetail = () => {
     queryKey: ['project', projectId],
     queryFn: async () => {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:8080/api/project/${projectId}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/project/${projectId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!response.ok) throw new Error('Failed to fetch project');
@@ -42,7 +44,7 @@ const ProjectDetail = () => {
     queryKey: ['sprints', projectId],
     queryFn: async () => {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:8080/api/sprint/project/${projectId}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/sprint/project/${projectId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!response.ok) throw new Error('Failed to fetch sprints');
@@ -102,7 +104,18 @@ const ProjectDetail = () => {
             </div>
             <p className="text-gray-600 capitalize">{project?.type} Project</p>
           </div>
-          {projectId && <SprintForm projectId={projectId} />}
+          <div className="flex items-center space-x-2">
+            <ProjectForm 
+              project={project} 
+              trigger={
+                <Button variant="outline" size="sm">
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit Project
+                </Button>
+              }
+            />
+            {projectId && <SprintForm projectId={projectId} />}
+          </div>
         </div>
 
         {/* Sprints Section */}
@@ -127,15 +140,28 @@ const ProjectDetail = () => {
               {sprints.map((sprint: Sprint) => (
                 <Card 
                   key={sprint._id}
-                  className="hover:shadow-lg transition-shadow duration-200 cursor-pointer group"
-                  onClick={() => navigate(`/sprints/${sprint._id}`)}
+                  className="hover:shadow-lg transition-shadow duration-200 group"
                 >
                   <CardHeader>
                     <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg group-hover:text-blue-600 transition-colors">
+                      <CardTitle 
+                        className="text-lg group-hover:text-blue-600 transition-colors cursor-pointer"
+                        onClick={() => navigate(`/sprints/${sprint._id}`)}
+                      >
                         {sprint.sprintName}
                       </CardTitle>
-                      <Calendar className="h-5 w-5 text-gray-400 group-hover:text-blue-500 transition-colors" />
+                      <div className="flex items-center space-x-1">
+                        <SprintForm 
+                          sprint={sprint} 
+                          projectId={projectId!}
+                          trigger={
+                            <Button variant="ghost" size="sm">
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          }
+                        />
+                        <Calendar className="h-5 w-5 text-gray-400 group-hover:text-blue-500 transition-colors" />
+                      </div>
                     </div>
                   </CardHeader>
                   <CardContent>

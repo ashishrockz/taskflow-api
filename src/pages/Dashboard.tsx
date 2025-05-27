@@ -36,7 +36,7 @@ const Dashboard = () => {
     queryKey: ['projects'],
     queryFn: async () => {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:8080/api/project`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/project`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!response.ok) throw new Error('Failed to fetch projects');

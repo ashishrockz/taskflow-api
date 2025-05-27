@@ -1,11 +1,15 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
-import { Bug, CheckSquare, Clock, AlertCircle } from "lucide-react";
+import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
+import { Bug, CheckSquare, Clock, AlertCircle, Edit } from "lucide-react";
 import Layout from "@/components/layout/Layout";
 import IssueForm from "@/components/forms/IssueForm";
+import SprintForm from "@/components/forms/SprintForm";
 
 interface Issue {
   _id: string;
@@ -28,15 +32,18 @@ interface Sprint {
   projectId: string;
 }
 
+const ITEMS_PER_PAGE = 5;
+
 const SprintDetail = () => {
   const { sprintId } = useParams();
   const navigate = useNavigate();
+  const [currentPage, setCurrentPage] = useState(1);
 
   const { data: sprint, isLoading: sprintLoading } = useQuery({
     queryKey: ['sprint', sprintId],
     queryFn: async () => {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:8080/api/sprint/${sprintId}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/sprint/${sprintId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!response.ok) throw new Error('Failed to fetch sprint');
@@ -44,17 +51,23 @@ const SprintDetail = () => {
     },
   });
 
-  const { data: issues, isLoading: issuesLoading } = useQuery({
+  const { data: allIssues, isLoading: issuesLoading } = useQuery({
     queryKey: ['issues', sprintId],
     queryFn: async () => {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:8080/api/issue/${sprintId}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/issue/${sprintId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!response.ok) throw new Error('Failed to fetch issues');
       return response.json();
     },
   });
+
+  // Pagination logic
+  const totalPages = Math.ceil((allIssues?.length || 0) / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const issues = allIssues?.slice(startIndex, endIndex) || [];
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -124,14 +137,30 @@ const SprintDetail = () => {
             </div>
             <p className="text-gray-600">Sprint Board</p>
           </div>
-          {sprintId && sprint?.projectId && (
-            <IssueForm sprintId={sprintId} projectId={sprint.projectId} />
-          )}
+          <div className="flex items-center space-x-2">
+            <SprintForm 
+              sprint={sprint} 
+              projectId={sprint?.projectId!}
+              trigger={
+                <Button variant="outline" size="sm">
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit Sprint
+                </Button>
+              }
+            />
+            {sprintId && sprint?.projectId && (
+              <IssueForm sprintId={sprintId} projectId={sprint.projectId} />
+            )}
+          </div>
         </div>
 
         {/* Issues Section */}
         <div className="mb-8">
-          <h2 className="text-2xl font-semibold text-gray-900 mb-4">Issues</h2>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-semibold text-gray-900">
+              Issues ({allIssues?.length || 0})
+            </h2>
+          </div>
           
           {issuesLoading ? (
             <div className="space-y-4">
@@ -145,45 +174,110 @@ const SprintDetail = () => {
               ))}
             </div>
           ) : issues?.length > 0 ? (
-            <div className="space-y-4">
-              {issues.map((issue: Issue) => (
-                <Card 
-                  key={issue._id}
-                  className="hover:shadow-lg transition-shadow duration-200 cursor-pointer group"
-                  onClick={() => navigate(`/issues/${issue._id}`)}
-                >
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-2 mb-2">
-                          {getTypeIcon(issue.issueType)}
-                          <span className="text-sm text-gray-500">{issue.customId}</span>
-                          <Badge className={`text-xs ${getPriorityColor(issue.priority)}`}>
-                            {issue.priority}
+            <>
+              <div className="space-y-4">
+                {issues.map((issue: Issue) => (
+                  <Card 
+                    key={issue._id}
+                    className="hover:shadow-lg transition-shadow duration-200 group"
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-2 mb-2">
+                            {getTypeIcon(issue.issueType)}
+                            <span className="text-sm text-gray-500">{issue.customId}</span>
+                            <Badge className={`text-xs ${getPriorityColor(issue.priority)}`}>
+                              {issue.priority}
+                            </Badge>
+                          </div>
+                          <h3 
+                            className="text-lg font-medium text-gray-900 group-hover:text-blue-600 transition-colors mb-1 cursor-pointer"
+                            onClick={() => navigate(`/issues/${issue._id}`)}
+                          >
+                            {issue.title}
+                          </h3>
+                          <p className="text-gray-600 text-sm mb-2">{issue.Summary}</p>
+                          <div className="flex items-center space-x-4 text-sm text-gray-500">
+                            <span>Assigned to: {issue.assignedTo}</span>
+                            {issue.subIssues && issue.subIssues.length > 0 && (
+                              <span>{issue.subIssues.length} sub-issues</span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <IssueForm 
+                            issue={issue}
+                            sprintId={sprintId!}
+                            projectId={sprint?.projectId!}
+                            trigger={
+                              <Button variant="ghost" size="sm">
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                            }
+                          />
+                          {getStatusIcon(issue.status)}
+                          <Badge variant="secondary" className="text-xs">
+                            {issue.status}
                           </Badge>
                         </div>
-                        <h3 className="text-lg font-medium text-gray-900 group-hover:text-blue-600 transition-colors mb-1">
-                          {issue.title}
-                        </h3>
-                        <p className="text-gray-600 text-sm mb-2">{issue.Summary}</p>
-                        <div className="flex items-center space-x-4 text-sm text-gray-500">
-                          <span>Assigned to: {issue.assignedTo}</span>
-                          {issue.subIssues && issue.subIssues.length > 0 && (
-                            <span>{issue.subIssues.length} sub-issues</span>
-                          )}
-                        </div>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        {getStatusIcon(issue.status)}
-                        <Badge variant="secondary" className="text-xs">
-                          {issue.status}
-                        </Badge>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="mt-8 flex justify-center">
+                  <Pagination>
+                    <PaginationContent>
+                      <PaginationItem>
+                        <PaginationPrevious 
+                          onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                          className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                        />
+                      </PaginationItem>
+                      
+                      {[...Array(totalPages)].map((_, i) => {
+                        const page = i + 1;
+                        if (
+                          page === 1 ||
+                          page === totalPages ||
+                          (page >= currentPage - 1 && page <= currentPage + 1)
+                        ) {
+                          return (
+                            <PaginationItem key={page}>
+                              <PaginationLink
+                                onClick={() => setCurrentPage(page)}
+                                isActive={currentPage === page}
+                                className="cursor-pointer"
+                              >
+                                {page}
+                              </PaginationLink>
+                            </PaginationItem>
+                          );
+                        } else if (page === currentPage - 2 || page === currentPage + 2) {
+                          return (
+                            <PaginationItem key={page}>
+                              <PaginationEllipsis />
+                            </PaginationItem>
+                          );
+                        }
+                        return null;
+                      })}
+                      
+                      <PaginationItem>
+                        <PaginationNext 
+                          onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                          className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                        />
+                      </PaginationItem>
+                    </PaginationContent>
+                  </Pagination>
+                </div>
+              )}
+            </>
           ) : (
             <Card className="text-center py-12">
               <CardContent>
