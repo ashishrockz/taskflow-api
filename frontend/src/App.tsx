@@ -3,13 +3,14 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import ProtectedRoute from "./components/ProtectedRoute";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import ProjectDetail from "./pages/ProjectDetail";
 import SprintDetail from "./pages/SprintDetail";
 import IssueDetail from "./pages/IssueDetail";
-import NotFound from "@/pages/NotFound";
+import NotFound from '@/pages/NotFound';
 
 const queryClient = new QueryClient();
 
@@ -20,12 +21,45 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
+          {/* Public routes */}
           <Route path="/" element={<Index />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/projects/:projectId" element={<ProjectDetail />} />
-          <Route path="/sprints/:sprintId" element={<SprintDetail />} />
-          <Route path="/issues/:issueId" element={<IssueDetail />} />
+          
+          {/* Protected routes */}
+          <Route 
+            path="/dashboard" 
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/projects/:projectId" 
+            element={
+              <ProtectedRoute>
+                <ProjectDetail />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/sprints/:sprintId" 
+            element={
+              <ProtectedRoute>
+                <SprintDetail />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/issues/:issueId" 
+            element={
+              <ProtectedRoute>
+                <IssueDetail />
+              </ProtectedRoute>
+            } 
+          />
+          
+          {/* 404 route */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

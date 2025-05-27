@@ -26,18 +26,11 @@ const Dashboard = () => {
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
     const userData = localStorage.getItem('user');
-    
-    if (!token) {
-      navigate('/login');
-      return;
-    }
-    
     if (userData) {
       setUser(JSON.parse(userData));
     }
-  }, [navigate]);
+  }, []);
 
   const { data: projects, isLoading } = useQuery({
     queryKey: ['projects'],
