@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Bug, CheckSquare, Clock, AlertCircle, Edit } from "lucide-react";
 import Layout from "@/components/layout/Layout";
 import IssueForm from "@/components/forms/IssueForm";
@@ -165,66 +166,93 @@ const SprintDetail = () => {
           {issuesLoading ? (
             <div className="space-y-4">
               {[...Array(3)].map((_, i) => (
-                <Card key={i} className="animate-pulse">
-                  <CardContent className="p-4">
-                    <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                    <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-                  </CardContent>
-                </Card>
+                <div key={i} className="animate-pulse">
+                  <div className="h-12 bg-gray-200 rounded mb-2"></div>
+                </div>
               ))}
             </div>
           ) : issues?.length > 0 ? (
             <>
-              <div className="space-y-4">
-                {issues.map((issue: Issue) => (
-                  <Card 
-                    key={issue._id}
-                    className="hover:shadow-lg transition-shadow duration-200 group"
-                  >
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-2 mb-2">
+              <div className="border rounded-lg overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[100px]">ID</TableHead>
+                      <TableHead>Title</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Priority</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Assigned To</TableHead>
+                      <TableHead>Sub-Issues</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {issues.map((issue: Issue) => (
+                      <TableRow key={issue._id} className="hover:bg-gray-50">
+                        <TableCell className="font-medium">
+                          <div className="flex items-center space-x-2">
                             {getTypeIcon(issue.issueType)}
-                            <span className="text-sm text-gray-500">{issue.customId}</span>
-                            <Badge className={`text-xs ${getPriorityColor(issue.priority)}`}>
-                              {issue.priority}
+                            <span className="text-sm">{issue.customId}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div>
+                            <div 
+                              className="font-medium text-gray-900 hover:text-blue-600 cursor-pointer transition-colors"
+                              onClick={() => navigate(`/issues/${issue._id}`)}
+                            >
+                              {issue.title}
+                            </div>
+                            <div className="text-sm text-gray-600 mt-1">{issue.Summary}</div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="text-xs">
+                            {issue.issueType}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={`text-xs ${getPriorityColor(issue.priority)}`}>
+                            {issue.priority}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center space-x-2">
+                            {getStatusIcon(issue.status)}
+                            <Badge variant="secondary" className="text-xs">
+                              {issue.status}
                             </Badge>
                           </div>
-                          <h3 
-                            className="text-lg font-medium text-gray-900 group-hover:text-blue-600 transition-colors mb-1 cursor-pointer"
-                            onClick={() => navigate(`/issues/${issue._id}`)}
-                          >
-                            {issue.title}
-                          </h3>
-                          <p className="text-gray-600 text-sm mb-2">{issue.Summary}</p>
-                          <div className="flex items-center space-x-4 text-sm text-gray-500">
-                            <span>Assigned to: {issue.assignedTo}</span>
-                            {issue.subIssues && issue.subIssues.length > 0 && (
-                              <span>{issue.subIssues.length} sub-issues</span>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex items-center space-x-2">
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-sm">{issue.assignedTo}</span>
+                        </TableCell>
+                        <TableCell>
+                          {issue.subIssues && issue.subIssues.length > 0 ? (
+                            <Badge variant="outline" className="text-xs">
+                              {issue.subIssues.length} sub-issues
+                            </Badge>
+                          ) : (
+                            <span className="text-xs text-gray-400">No sub-issues</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">
                           <IssueForm 
                             issue={issue}
                             sprintId={sprintId!}
                             projectId={sprint?.projectId!}
                             trigger={
-                              <Button variant="ghost" size="sm">
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
                                 <Edit className="h-4 w-4" />
                               </Button>
                             }
                           />
-                          {getStatusIcon(issue.status)}
-                          <Badge variant="secondary" className="text-xs">
-                            {issue.status}
-                          </Badge>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
 
               {/* Pagination */}
