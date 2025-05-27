@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Bug, CheckSquare, Clock, AlertCircle, User, Edit, Trash2 } from "lucide-react";
 import Layout from "@/components/layout/Layout";
 import SubIssueForm from "@/components/forms/SubIssueForm";
@@ -310,83 +311,109 @@ const IssueDetail = () => {
           
           {subIssuesLoading ? (
             <div className="space-y-4">
-              {[...Array(2)].map((_, i) => (
-                <Card key={i} className="animate-pulse">
-                  <CardContent className="p-4">
-                    <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                    <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-                  </CardContent>
-                </Card>
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="animate-pulse">
+                  <div className="h-12 bg-gray-200 rounded mb-2"></div>
+                </div>
               ))}
             </div>
           ) : subIssues?.length > 0 ? (
             <>
-              <div className="space-y-4">
-                {subIssues.map((subIssue: SubIssue) => (
-                  <Card key={subIssue._id} className="hover:shadow-md transition-shadow duration-200">
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-2 mb-2">
+              <div className="border rounded-lg overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[100px]">ID</TableHead>
+                      <TableHead>Title</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Priority</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Assigned To</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {subIssues.map((subIssue: SubIssue) => (
+                      <TableRow key={subIssue._id} className="hover:bg-gray-50">
+                        <TableCell className="font-medium">
+                          <div className="flex items-center space-x-2">
                             {getTypeIcon(subIssue.subissueType)}
-                            <span className="text-sm text-gray-500">{subIssue.customId}</span>
-                            <Badge className={`text-xs ${getPriorityColor(subIssue.priority)}`}>
-                              {subIssue.priority}
+                            <span className="text-sm">{subIssue.customId}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div>
+                            <div className="font-medium text-gray-900">{subIssue.title}</div>
+                            <div className="text-sm text-gray-600 mt-1">{subIssue.summary}</div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="text-xs">
+                            {subIssue.subissueType}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={`text-xs ${getPriorityColor(subIssue.priority)}`}>
+                            {subIssue.priority}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center space-x-2">
+                            {getStatusIcon(subIssue.status)}
+                            <Badge variant="secondary" className="text-xs">
+                              {subIssue.status}
                             </Badge>
                           </div>
-                          <h3 className="text-lg font-medium text-gray-900 mb-1">
-                            {subIssue.title}
-                          </h3>
-                          <p className="text-gray-600 text-sm mb-2">{subIssue.summary}</p>
-                          <div className="flex items-center space-x-4 text-sm text-gray-500">
-                            <span>Assigned to: {subIssue.assignedTo}</span>
-                            <span>Type: {subIssue.subissueType}</span>
-                          </div>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <SubIssueForm 
-                            subIssue={subIssue}
-                            issueId={issueId!}
-                            trigger={
-                              <Button variant="ghost" size="sm">
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                            }
-                          />
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50">
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Delete Sub-Issue</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Are you sure you want to delete this sub-issue? This action cannot be undone.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => deleteSubIssueMutation.mutate(subIssue._id)}
-                                  className="bg-red-600 hover:bg-red-700"
-                                  disabled={deleteSubIssueMutation.isPending}
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-sm">{subIssue.assignedTo}</span>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end space-x-1">
+                            <SubIssueForm 
+                              subIssue={subIssue}
+                              issueId={issueId!}
+                              trigger={
+                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                              }
+                            />
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
                                 >
-                                  {deleteSubIssueMutation.isPending ? "Deleting..." : "Delete"}
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                          {getStatusIcon(subIssue.status)}
-                          <Badge variant="secondary" className="text-xs">
-                            {subIssue.status}
-                          </Badge>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete Sub-Issue</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Are you sure you want to delete this sub-issue? This action cannot be undone.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => deleteSubIssueMutation.mutate(subIssue._id)}
+                                    className="bg-red-600 hover:bg-red-700"
+                                    disabled={deleteSubIssueMutation.isPending}
+                                  >
+                                    {deleteSubIssueMutation.isPending ? "Deleting..." : "Delete"}
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
 
               {/* Pagination */}
