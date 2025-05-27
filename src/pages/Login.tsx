@@ -186,7 +186,9 @@ const Login = () => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="developer">Developer</SelectItem>
-                      <SelectItem value="manager">Manager</SelectItem>
+                      <SelectItem value="bd">BD</SelectItem>
+                      <SelectItem value="tester">Tester</SelectItem>
+                      {/* <SelectItem value="manager">Manager</SelectItem> */}
                     </SelectContent>
                   </Select>
                 </div>
