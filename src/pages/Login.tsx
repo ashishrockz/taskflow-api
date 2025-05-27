@@ -34,7 +34,7 @@ const Login = () => {
     const password = formData.get("password") as string;
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/auth/login`, {
+      const response = await fetch(`http://localhost:8080/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -71,7 +71,7 @@ const Login = () => {
     const role = formData.get("role") as string;
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/auth/signup`, {
+      const response = await fetch(`http://localhost:8080/auth/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password, fullName, role }),

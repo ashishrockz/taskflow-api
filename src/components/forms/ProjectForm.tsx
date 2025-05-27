@@ -8,12 +8,11 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Plus } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 
-interface SprintFormProps {
-  projectId: string;
+interface ProjectFormProps {
   onSuccess?: () => void;
 }
 
-const SprintForm = ({ projectId, onSuccess }: SprintFormProps) => {
+const ProjectForm = ({ onSuccess }: ProjectFormProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -25,31 +24,31 @@ const SprintForm = ({ projectId, onSuccess }: SprintFormProps) => {
     setError("");
 
     const formData = new FormData(e.currentTarget);
-    const sprintData = {
-      sprintName: formData.get("sprintName") as string,
-      sprintType: formData.get("sprintType") as string,
-      projectId,
+    const projectData = {
+      name: formData.get("name") as string,
+      key: formData.get("key") as string,
+      type: formData.get("type") as string,
     };
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/sprint`, {
+      const response = await fetch(`http://localhost:8080/api/project`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(sprintData),
+        body: JSON.stringify(projectData),
       });
 
       if (response.ok) {
-        queryClient.invalidateQueries({ queryKey: ['sprints', projectId] });
+        queryClient.invalidateQueries({ queryKey: ['projects'] });
         setIsOpen(false);
         onSuccess?.();
         (e.target as HTMLFormElement).reset();
       } else {
         const data = await response.json();
-        setError(data.message || "Failed to create sprint");
+        setError(data.message || "Failed to create project");
       }
     } catch (err) {
       setError("Network error. Please try again.");
@@ -63,37 +62,47 @@ const SprintForm = ({ projectId, onSuccess }: SprintFormProps) => {
       <DialogTrigger asChild>
         <Button className="bg-blue-600 hover:bg-blue-700">
           <Plus className="h-4 w-4 mr-2" />
-          New Sprint
+          New Project
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Create New Sprint</DialogTitle>
+          <DialogTitle>Create New Project</DialogTitle>
           <DialogDescription>
-            Add a new sprint to organize your work iterations.
+            Add a new project to organize your work.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="sprintName">Sprint Name</Label>
+            <Label htmlFor="name">Project Name</Label>
             <Input
-              id="sprintName"
-              name="sprintName"
-              placeholder="Enter sprint name"
+              id="name"
+              name="name"
+              placeholder="Enter project name"
               required
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="sprintType">Sprint Type</Label>
-            <Select name="sprintType" required>
+            <Label htmlFor="key">Project Key</Label>
+            <Input
+              id="key"
+              name="key"
+              placeholder="e.g., PROJ"
+              required
+              className="uppercase"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="type">Project Type</Label>
+            <Select name="type" required>
               <SelectTrigger>
-                <SelectValue placeholder="Select sprint type" />
+                <SelectValue placeholder="Select project type" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="development">Development</SelectItem>
-                <SelectItem value="testing">Testing</SelectItem>
-                <SelectItem value="release">Release</SelectItem>
-                <SelectItem value="planning">Planning</SelectItem>
+                <SelectItem value="software">Software</SelectItem>
+                <SelectItem value="marketing">Marketing</SelectItem>
+                <SelectItem value="business">Business</SelectItem>
+                <SelectItem value="other">Other</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -107,7 +116,7 @@ const SprintForm = ({ projectId, onSuccess }: SprintFormProps) => {
               Cancel
             </Button>
             <Button type="submit" disabled={isLoading}>
-              {isLoading ? "Creating..." : "Create Sprint"}
+              {isLoading ? "Creating..." : "Create Project"}
             </Button>
           </div>
         </form>
@@ -116,4 +125,4 @@ const SprintForm = ({ projectId, onSuccess }: SprintFormProps) => {
   );
 };
 
-export default SprintForm;
+export default ProjectForm;

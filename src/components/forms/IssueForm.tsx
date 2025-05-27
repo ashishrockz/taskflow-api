@@ -39,7 +39,7 @@ const IssueForm = ({ sprintId, projectId, onSuccess }: IssueFormProps) => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/issue/${sprintId}`, {
+      const response = await fetch(`http://localhost:8080/api/issue/${sprintId}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

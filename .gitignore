@@ -1,6 +1,9 @@
-node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 .config/
-.env
 .next/
 .cache/
 .netlify/
@@ -8,3 +11,18 @@ node_modules/
 dist/
 build/
 tmp/
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

@@ -36,7 +36,7 @@ const SprintDetail = () => {
     queryKey: ['sprint', sprintId],
     queryFn: async () => {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/sprint/${sprintId}`, {
+      const response = await fetch(`http://localhost:8080/api/sprint/${sprintId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!response.ok) throw new Error('Failed to fetch sprint');
@@ -48,7 +48,7 @@ const SprintDetail = () => {
     queryKey: ['issues', sprintId],
     queryFn: async () => {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/issue/${sprintId}`, {
+      const response = await fetch(`http://localhost:8080/api/issue/${sprintId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!response.ok) throw new Error('Failed to fetch issues');

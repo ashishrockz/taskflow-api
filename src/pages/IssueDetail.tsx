@@ -46,7 +46,7 @@ const IssueDetail = () => {
       const token = localStorage.getItem('token');
       // We need to find the issue by searching through sprints
       // For now, let's try a direct approach - this might need adjustment based on actual API
-      const sprintsResponse = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/sprint`, {
+      const sprintsResponse = await fetch(`http://localhost:8080/api/sprint`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       
@@ -56,7 +56,7 @@ const IssueDetail = () => {
       // Search through sprints to find the issue
       for (const sprint of sprints) {
         try {
-          const issuesResponse = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/issue/${sprint._id}`, {
+          const issuesResponse = await fetch(`http://localhost:8080/api/issue/${sprint._id}`, {
             headers: { Authorization: `Bearer ${token}` },
           });
           
@@ -80,7 +80,7 @@ const IssueDetail = () => {
     queryKey: ['subissues', issueId],
     queryFn: async () => {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/subissue/issue/${issueId}`, {
+      const response = await fetch(`http://localhost:8080/api/subissue/issue/${issueId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!response.ok) throw new Error('Failed to fetch sub-issues');

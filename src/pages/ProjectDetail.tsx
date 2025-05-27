@@ -30,7 +30,7 @@ const ProjectDetail = () => {
     queryKey: ['project', projectId],
     queryFn: async () => {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/project/${projectId}`, {
+      const response = await fetch(`http://localhost:8080/api/project/${projectId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!response.ok) throw new Error('Failed to fetch project');
@@ -42,7 +42,7 @@ const ProjectDetail = () => {
     queryKey: ['sprints', projectId],
     queryFn: async () => {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/sprint/project/${projectId}`, {
+      const response = await fetch(`http://localhost:8080/api/sprint/project/${projectId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!response.ok) throw new Error('Failed to fetch sprints');
